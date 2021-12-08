@@ -5,7 +5,7 @@ on:
     branches:
       - master
   schedule:
-    - cron: '3 0 * * *'
+    - cron: '0 0 10 * *'
 
 jobs:
   v2ex_sign:
