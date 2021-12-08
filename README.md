@@ -40,4 +40,4 @@
 4. V2EX_COOKIES 值:V2EX论坛签到cookie
 5. SMZDM_COOKIES 值:SMZDM论坛cookie
 6. GTAPI telegram机器人通知api
-7. CHATID telegram会话id
+7. CHATID telegram会话id 
