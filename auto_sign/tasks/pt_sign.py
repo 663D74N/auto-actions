@@ -78,7 +78,7 @@ def signin(session, url, name):
             r = re.compile(r'已签到')
             r1 = re.compile(r'请勿重复刷新')
             # print(res.text)
-            if r.search(res.text):
+            if r.search(res.text) and r1.search(res.text) is None:
                 tip = ' 签到成功'
             elif r1.search(res.text):
                 tip = ' 重复签到'
@@ -86,11 +86,37 @@ def signin(session, url, name):
                 tip = ' cookie已过期'
             print(now(), ' 网站：%s' % url, tip)
             txt += '网站：<a href="%s">%s</a>' % (url, name) + tip + '\n'
+    # hares白兔
+    elif url == "https://club.hares.top":
+        attendance_url = url + '/attendance.php?action=sign'
+        headers = {'Accept': 'application/json'}
+        session.headers.update(headers)
+        # print(session.headers)
+        with session.get(attendance_url) as res:
+            try:
+                msg = json.loads(res.text.encode('utf-8').decode('unicode-escape')).get('msg')
+            except JSONDecodeError:
+                msg = res.text
+            r = re.compile(r'签到成功')
+            r1 = re.compile(r'已经签到')
+            print(msg)
+            if r.search(msg) and r1.search(msg) is None:
+                tip = ' 签到成功'
+            elif r1.search(msg):
+                tip = ' 重复签到'
+            else:
+                tip = ' cookie已过期'
+            print(now(), ' 网站：%s' % url, tip)
+            txt += '网站：<a href="%s">%s</a>' % (url, name) + tip + '\n'
     else:
         attendance_url = url + '/attendance.php'
+        # 绕过cf5秒盾
+        # session = cloudscraper.create_scraper(session)
         with session.get(attendance_url) as res:
             r = re.compile(r'请勿重复刷新')
             r1 = re.compile(r'签到已得[\s]*\d+')
+            # if url == "https://www.hddolby.com" or url == "https://pt.btschool.club":
+            # print(res.text)
             if r.search(res.text):
                 tip = ' 重复签到'
             elif r1.search(res.text):
@@ -112,6 +138,30 @@ def signin_discuz_dsu(session, url, name):
     with session.post(attendance_url, data) as res:
         r = re.compile(r'签到成功')
         r1 = re.compile(r'已经签到')
+        global txt
+        if r.search(res.text):
+            txt += '网站：<a href="%s">%s</a>' % (url, name) + " 签到成功 \n"
+            print(now(), ' 网站：%s' % url, " 签到成功")
+        elif r1.search(res.text):
+            txt += '网站：<a href="%s">%s</a>' % (url, name) + " 重复签到 \n"
+            print(now(), ' 网站：%s' % url, " 重复签到")
+        else:
+            txt += '网站：<a href="%s">%s</a>' % (url, name) + " cookie已过期 \n"
+            print(now(), ' 网站：%s' % url, res.text)
+
+
+# 不移之火签到
+def signin_discuz_ksu(session, url, name):
+    attendance_url = url + "/plugin.php?id=k_misign:sign&operation=qiandao"
+    hash_url = url + "/plugin.php?id=k_misign:sign"
+    with session.get(hash_url) as hashurl:
+        h = re.compile(r'name="formhash" value="(.*?)"')
+        formhash = h.search(hashurl.text).group(1)
+    data = {"formhash": formhash, "format": "empty"}
+    with session.post(attendance_url, data) as res:
+        # print(res.text)
+        r = re.compile(r'CDATA\[\]')
+        r1 = re.compile(r'今日已签')
         global txt
         if r.search(res.text):
             txt += '网站：<a href="%s">%s</a>' % (url, name) + " 签到成功 \n"
@@ -149,6 +199,7 @@ def main():
     print(now(), '--其他站开始签到--')
     [signin_discuz_dsu(config['session'], config['url'], config['name']) for config in generateConfig() if 'sign_in_discuz' in config['tasks']]
     [signin_hifi(config['session'], config['url'], config['name']) for config in generateConfig() if 'sign_in_hifi' in config['tasks']]
+    [signin_discuz_ksu(config['session'], config['url'], config['name']) for config in generateConfig() if 'sign_in_discuz_ksu' in config['tasks']]
     # cookie过期发送qq推送信息
     r = re.compile(r'过期')
     r1 = re.compile(r'重复')
